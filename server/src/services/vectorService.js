@@ -11,9 +11,10 @@ await pool.query(
 export async function searchSimilarChunks(queryEmbedding, limit = 5) {
   const result = await pool.query(
     `
-    SELECT content
+    SELECT content,
+          embedding <-> $1 AS distance
     FROM document_chunks
-    ORDER BY embedding <-> $1::vector
+    ORDER BY embedding <-> $1
     LIMIT $2
     `,
     [JSON.stringify(queryEmbedding), limit]

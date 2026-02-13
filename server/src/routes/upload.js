@@ -6,7 +6,6 @@ import { insertChunk } from "../services/vectorService.js";
 export default async function uploadRoutes(fastify, options) {
   fastify.post("/", async (request, reply) => {
 
-
     const data = await request.file();
 
     if (!data) {
@@ -14,7 +13,6 @@ export default async function uploadRoutes(fastify, options) {
     }
 
     const buffer = await data.toBuffer();
-    console.log(buffer, "++++++++++++++++++++++++++++++++++++");
 
     // Extract text
     const text = await extractText(buffer);
@@ -22,11 +20,21 @@ export default async function uploadRoutes(fastify, options) {
     //Chunk
     const chunks = chunkText(text);
 
-    // Embed + Store
-    for (const chunk of chunks) {
-      const embedding = await generateEmbedding(chunk);
+    //create batches for chunk
+    const batchSize = 3;  //for local machine
 
-      await insertChunk(chunk, embedding);
+    for (let i=0; i < chunks.length; i += batchSize){
+      
+      const batch = chunks.slice(i, i + batchSize);
+      const embeddings = await Promise.all(
+        batch.map(chunk => generateEmbedding(chunk))
+      );
+
+      await Promise.all(
+        batch.map((chunk, index) => {
+          insertChunk(chunk, embeddings[index])
+        })
+      )
     }
 
     return {

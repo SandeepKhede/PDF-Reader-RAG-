@@ -11,7 +11,8 @@ dotenv.config();
 const app = Fastify({ logger: true });
 
 await app.register(cors, {
-  origin: true,
+  origin: 'http://localhost:5173',
+  credentials: true
 });
 
 await app.register(multipart)
